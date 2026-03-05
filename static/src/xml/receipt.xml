@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="utf-8"?>
+<templates id="template" xml:space="preserve">
+
+    <!-- Remove Tax Invoice number, Add address in header -->
+    <t t-name="point_of_sale.ReceiptHeader"
+       t-inherit="point_of_sale.ReceiptHeader"
+       t-inherit-mode="extension">
+        <xpath expr="//div[hasclass('text-center')][span[hasclass('pos-receipt-vat')]]" position="replace">
+            <div class="text-center pt-1" style="font-size: 75%;">
+                <div t-if="order.date_order" id="order-date" t-out="order.formatDateOrTime('date_order')"/>
+            </div>
+        </xpath>
+        <xpath expr="//img[hasclass('pos-receipt-logo')]" position="after">
+            <div class="text-center" style="font-size: 75%; margin-top:4px;">
+                <t t-set="company" t-value="order.company"/>
+                <div t-if="company.street" t-out="company.street"/>
+                <div>
+                    <t t-if="company.city" t-out="company.city"/>
+                    <t t-if="company.state_id" t-out="', ' + company.state_id.code"/>
+                    <t t-if="company.zip" t-out="', ' + company.zip"/>
+                </div>
+                <div t-if="company.phone">Tel: <t t-out="company.phone"/></div>
+            </div>
+        </xpath>
+    </t>
+
+    <t t-name="point_of_sale.OrderReceipt"
+       t-inherit="point_of_sale.OrderReceipt"
+       t-inherit-mode="extension">
+
+        <!-- Remove bottom address block -->
+        <xpath expr="//div[div[hasclass('pos-config-name')]]" position="replace"/>
+
+        <!-- Add table column headers before OrderDisplay -->
+        <xpath expr="//OrderDisplay" position="before">
+            <t t-if="order.config.khatri_enable_stepped_discount">
+                <div style="display:flex; justify-content:space-between; font-size:11px; font-weight:700; border-top:1px solid #333; border-bottom:1px solid #333; padding:3px 0; margin-bottom:2px;">
+                    <span style="width:18px;">#</span>
+                    <span style="flex:1;">Item</span>
+                    <span style="width:28px; text-align:center;">Qty</span>
+                    <span style="width:72px; text-align:right;">MRP</span>
+                    <span style="width:72px; text-align:right;">Price</span>
+                </div>
+            </t>
+        </xpath>
+
+        <!-- Discount breakdown -->
+        <xpath expr="//div[hasclass('before-footer')]" position="before">
+            <t t-set="khatriInfo" t-value="getKhatriOrderInfo()"/>
+            <t t-if="khatriInfo and khatriInfo.totalSaved > 0">
+                <div style="margin:6px 0; padding:6px 2px;">
+                    <div style="display:flex; justify-content:space-between; font-size:12px; color:#555; margin-bottom:2px;">
+                        <span>MRP (Original)</span>
+                        <span style="text-decoration:line-through;"><t t-esc="formatCurrency(khatriInfo.totalOriginal)"/></span>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; font-size:12px; color:#c0392b; font-weight:600;">
+                        <span>Step 1: 50% Discount</span>
+                        <span>- <t t-esc="formatCurrency(khatriInfo.totalOriginal * khatriInfo.d1 / 100)"/></span>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; font-size:12px; color:#c0392b; font-weight:600;">
+                        <span>Step 2: 25% on remainder</span>
+                        <span>- <t t-esc="formatCurrency(khatriInfo.totalOriginal * (1 - khatriInfo.d1/100) * khatriInfo.d2/100)"/></span>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; font-size:14px; color:#27ae60; font-weight:700; margin-top:4px; border-top:1px dashed #aaa; padding-top:4px;">
+                        <span>Total Saved 🎉</span>
+                        <span><t t-esc="formatCurrency(khatriInfo.totalSaved)"/></span>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; font-size:14px; color:#1a1a1a; font-weight:800; margin-top:4px; border-top:2px solid #333; padding-top:4px;">
+                        <span>✅ You Pay</span>
+                        <span><t t-esc="formatCurrency(khatriInfo.totalFinal)"/></span>
+                    </div>
+                    <div style="text-align:center; font-size:10px; color:#777; margin-top:3px;">
+                        (50% + 25% stepped discount applied)
+                    </div>
+                </div>
+            </t>
+        </xpath>
+    </t>
+
+    <t t-name="point_of_sale.Orderline"
+       t-inherit="point_of_sale.Orderline"
+       t-inherit-mode="extension">
+
+        <!-- Hide discount tag -->
+        <xpath expr="//li[i[hasclass('fa-tag')]]" position="replace">
+            <li t-if="vals.discount and !line.order_id?.config?.khatri_enable_stepped_discount" class="price-per-unit">
+                <i class="fa fa-tag pe-1"/><em><t t-esc="vals.discount"/>% </em> discount off on <t t-esc="vals.noDiscountPrice"/>
+            </li>
+        </xpath>
+
+        <!-- Table row layout for receipt -->
+        <xpath expr="//div[hasclass('line-details')]" position="replace">
+            <div class="line-details d-flex justify-content-between" t-att-class="{ 'align-items-center' : vals.isReceipt }">
+                <t t-if="vals.isReceipt and line.order_id?.config?.khatri_enable_stepped_discount">
+                    <span style="width:18px; font-size:11px; color:#555; align-self:center;">
+                        <t t-esc="line.order_id.lines.indexOf(line) + 1"/>
+                    </span>
+                    <span style="flex:1; font-size:12px; align-self:center; padding-right:4px;">
+                        <t t-if="line.product_id?.pos_categ_ids?.length">
+                            <t t-esc="line.product_id.pos_categ_ids[0].name"/> /
+                        </t>
+                        <t t-esc="vals.name"/>
+                    </span>
+                    <span style="width:28px; text-align:center; font-size:12px; font-weight:700; align-self:center;">
+                        <t t-esc="line.qty"/>
+                    </span>
+                    <span style="width:72px; text-align:right; font-size:11px; color:#888; text-decoration:line-through; align-self:center;">
+                        <t t-esc="line.currency.symbol"/><t t-esc="(line.price_unit * line.qty).toFixed(2)"/>
+                    </span>
+                    <span style="width:72px; text-align:right; font-size:12px; font-weight:600; align-self:center;">
+                        <t t-out="vals.price"/>
+                    </span>
+                </t>
+                <t t-else="">
+                    <div class="product-name d-flex flex-grow-1 pe-2 text-truncate" t-att-class="{ 'align-items-center' : vals.isReceipt }">
+                        <span class="qty d-inline-block fw-bolder" t-attf-class="{{ vals.isReceipt ? 'pe-2' : 'px-1' }}">
+                            <t t-esc="vals.unitPart"/>
+                            <small t-if="vals.decimalPart" t-out="vals.decimalPart" class="fw-normal" style="font-size: 85%;"/>
+                        </span>
+                        <span class="text-wrap d-inline">
+                            <t t-esc="vals.name"/>
+                            <br/>
+                            <small t-if="vals.attributeString" t-out="vals.attributeString" class="attribute-line fst-italic"/>
+                        </span>
+                    </div>
+                    <div t-if="vals.price" t-out="vals.price" class="product-price price fw-bolder"/>
+                    <div t-if="vals.taxGroup" t-esc="vals.taxGroup" class="text-end" style="width: 2rem"/>
+                </t>
+            </div>
+        </xpath>
+
+    </t>
+
+</templates>

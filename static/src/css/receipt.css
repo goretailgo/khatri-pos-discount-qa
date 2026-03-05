@@ -1,0 +1,29 @@
+/* Hide the auto-generated discount tag line on receipt */
+.pos-receipt .price-per-unit:has(.fa-tag) {
+    display: none !important;
+}
+
+/* Also hide on POS screen orderline */
+.orderline .price-per-unit:has(.fa-tag) {
+    display: none !important;
+}
+
+.khatri-total-saved-block {
+    border-top: 1px dashed #333;
+    border-bottom: 1px dashed #333;
+    margin: 6px 0;
+    padding: 6px 0;
+}
+.khatri-saved-row {
+    display: flex;
+    justify-content: space-between;
+    font-weight: 700;
+    font-size: 13px;
+    color: #27ae60;
+}
+.khatri-saved-note {
+    font-size: 10px;
+    color: #555;
+    margin-top: 2px;
+    text-align: center;
+}
