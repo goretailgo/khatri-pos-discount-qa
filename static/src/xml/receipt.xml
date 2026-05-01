@@ -7,6 +7,7 @@
         <xpath expr="//div[hasclass('text-center')][span[hasclass('pos-receipt-vat')]]" position="replace">
             <div class="text-center pt-1" style="font-size: 75%;">
                 <div t-if="order.date_order" id="order-date" t-out="order.formatDateOrTime('date_order')"/>
+                <div t-if="order.pos_reference" style="font-weight:700;">Receipt: <t t-out="order.pos_reference"/></div>
             </div>
         </xpath>
         <xpath expr="//img[hasclass('pos-receipt-logo')]" position="after">
