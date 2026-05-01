@@ -14,6 +14,11 @@ class ResConfigSettings(models.TransientModel):
         readonly=False,
         string='First Discount (%)',
     )
+    pos_khatri_enable_second_discount = fields.Boolean(
+        related='pos_config_id.khatri_enable_second_discount',
+        readonly=False,
+        string='Enable Second Stepped Discount',
+    )
     pos_khatri_second_discount = fields.Float(
         related='pos_config_id.khatri_second_discount',
         readonly=False,
@@ -30,6 +35,10 @@ class PosConfig(models.Model):
     khatri_first_discount = fields.Float(
         string='First Discount (%)',
         default=50.0,
+    )
+    khatri_enable_second_discount = fields.Boolean(
+        string='Enable Second Stepped Discount',
+        default=True,
     )
     khatri_second_discount = fields.Float(
         string='Second Discount on Remainder (%)',
