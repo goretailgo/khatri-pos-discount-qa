@@ -30,19 +30,26 @@
                     SECTION A : 50% + 25% Discount
                 </div>
                 <div style="display:flex; justify-content:space-between; font-size:10px; font-weight:700; border-bottom:1px solid #999; padding:2px 0;">
-                    <span style="width:18px;">#</span>
+                    <span style="width:16px;">#</span>
                     <span style="flex:1;">Item</span>
-                    <span style="width:24px; text-align:center;">Qty</span>
-                    <span style="width:68px; text-align:right;">MRP</span>
-                    <span style="width:68px; text-align:right;">Price</span>
+                    <span style="width:20px; text-align:center;">Qty</span>
+                    <span style="width:58px; text-align:right;">Unit</span>
+                    <span style="width:58px; text-align:right;">MRP</span>
+                    <span style="width:58px; text-align:right;">Price</span>
                 </div>
                 <t t-foreach="steppedLines" t-as="sl" t-key="sl_index">
                     <div style="display:flex; justify-content:space-between; font-size:11px; padding:2px 0;">
-                        <span style="width:18px;"><t t-esc="sl_index + 1"/></span>
+                        <span style="width:16px;"><t t-esc="sl_index + 1"/></span>
                         <span style="flex:1;"><t t-esc="khatriLineName(sl)"/></span>
-                        <span style="width:24px; text-align:center;"><t t-esc="sl.qty"/></span>
-                        <span style="width:68px; text-align:right; color:#888; text-decoration:line-through;"><t t-esc="formatCurrency(khatriLineMrpNum(sl))"/></span>
-                        <span style="width:68px; text-align:right; font-weight:600;"><t t-esc="formatCurrency(khatriLineFinalNum(sl))"/></span>
+                        <span style="width:20px; text-align:center;"><t t-esc="sl.qty"/></span>
+                        <span style="width:58px; text-align:right; color:#888;"><t t-esc="formatCurrency(khatriLineUnitMrp(sl))"/></span>
+                        <t t-if="khatriLineHasDiscount(sl)">
+                            <span style="width:58px; text-align:right; color:#888; text-decoration:line-through;"><t t-esc="formatCurrency(khatriLineMrpNum(sl))"/></span>
+                        </t>
+                        <t t-if="khatriLineNoDiscount(sl)">
+                            <span style="width:58px; text-align:right; color:#888;"><t t-esc="formatCurrency(khatriLineMrpNum(sl))"/></span>
+                        </t>
+                        <span style="width:58px; text-align:right; font-weight:600;"><t t-esc="formatCurrency(khatriLineFinalNum(sl))"/></span>
                     </div>
                 </t>
                 <!-- Section A summary -->
@@ -77,22 +84,29 @@
                     <t t-if="khatriInfo.customSaved == 0">SECTION B</t>
                 </div>
                 <div style="display:flex; justify-content:space-between; font-size:10px; font-weight:700; border-bottom:1px solid #999; padding:2px 0;">
-                    <span style="width:18px;">#</span>
+                    <span style="width:16px;">#</span>
                     <span style="flex:1;">Item</span>
-                    <span style="width:24px; text-align:center;">Qty</span>
-                    <span style="width:68px; text-align:right;">MRP</span>
-                    <span style="width:68px; text-align:right;">Price</span>
+                    <span style="width:20px; text-align:center;">Qty</span>
+                    <span style="width:58px; text-align:right;">Unit</span>
+                    <span style="width:58px; text-align:right;">MRP</span>
+                    <span style="width:58px; text-align:right;">Price</span>
                 </div>
                 <t t-foreach="customLines" t-as="cl" t-key="cl_index">
                     <div style="display:flex; justify-content:space-between; font-size:11px; padding:2px 0;">
-                        <span style="width:18px;"><t t-esc="cl_index + 1"/></span>
+                        <span style="width:16px;"><t t-esc="cl_index + 1"/></span>
                         <span style="flex:1;">
                             <t t-esc="khatriLineName(cl)"/>
                             <t t-if="khatriLinePct(cl)"><span style="color:#c0392b; font-weight:700;"> (<t t-esc="khatriLinePct(cl)"/>% off)</span></t>
                         </span>
-                        <span style="width:24px; text-align:center;"><t t-esc="cl.qty"/></span>
-                        <span style="width:68px; text-align:right; color:#888; text-decoration:line-through;"><t t-esc="formatCurrency(khatriLineMrpNum(cl))"/></span>
-                        <span style="width:68px; text-align:right; font-weight:600;"><t t-esc="formatCurrency(khatriLineFinalNum(cl))"/></span>
+                        <span style="width:20px; text-align:center;"><t t-esc="cl.qty"/></span>
+                        <span style="width:58px; text-align:right; color:#888;"><t t-esc="formatCurrency(khatriLineUnitMrp(cl))"/></span>
+                        <t t-if="khatriLineHasDiscount(cl)">
+                            <span style="width:58px; text-align:right; color:#888; text-decoration:line-through;"><t t-esc="formatCurrency(khatriLineMrpNum(cl))"/></span>
+                        </t>
+                        <t t-if="khatriLineNoDiscount(cl)">
+                            <span style="width:58px; text-align:right; color:#888;"><t t-esc="formatCurrency(khatriLineMrpNum(cl))"/></span>
+                        </t>
+                        <span style="width:58px; text-align:right; font-weight:600;"><t t-esc="formatCurrency(khatriLineFinalNum(cl))"/></span>
                     </div>
                 </t>
                 <!-- Section B summary -->
