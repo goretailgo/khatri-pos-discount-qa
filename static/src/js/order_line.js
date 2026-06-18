@@ -282,6 +282,34 @@ patch(OrderReceipt.prototype, {
     },
 
     // Product display name for a line
+    // Unit MRP (per single unit, not multiplied by qty)
+    khatriLineUnitMrp(line) {
+        try { return line.price_unit || 0; } catch (e) { return 0; }
+    },
+
+    // Unit final price (per single unit, after discount)
+    khatriLineUnitFinal(line) {
+        try {
+            const order = this.props.order;
+            const eff = getSteppedEffective(order.config);
+            const r = resolveLineDiscount(line.product_id, eff);
+            return (line.price_unit || 0) * (1 - r.discount / 100);
+        } catch (e) { return 0; }
+    },
+
+    // Whether this line actually has a discount applied (> 0)
+    khatriLineNoDiscount(line) {
+        return !this.khatriLineHasDiscount(line);
+    },
+    khatriLineHasDiscount(line) {
+        try {
+            const order = this.props.order;
+            const eff = getSteppedEffective(order.config);
+            const r = resolveLineDiscount(line.product_id, eff);
+            return r.discount > 0;
+        } catch (e) { return false; }
+    },
+
     khatriLineName(line) {
         try {
             return (line.product_id && line.product_id.display_name) || "";
