@@ -21,6 +21,14 @@
                             <label for="pos_khatri_second_discount" class="col-lg-3 o_light_label"/>
                             <field name="pos_khatri_second_discount"/>
                         </div>
+                        <div class="row mt8">
+                            <label for="pos_khatri_receipt_logo" class="col-lg-3 o_light_label" string="Receipt Footer Logo"/>
+                            <field name="pos_khatri_receipt_logo" widget="image" class="oe_avatar" options="{'size': [200, 100]}"/>
+                        </div>
+                        <div class="row mt8">
+                            <label for="pos_khatri_receipt_contact" class="col-lg-3 o_light_label" string="Receipt Footer Contact Number"/>
+                            <field name="pos_khatri_receipt_contact" placeholder="e.g. 040 35931139 / 8639366119"/>
+                        </div>
                     </div>
                 </setting>
             </xpath>

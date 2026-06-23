@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from odoo import fields, models
+from odoo import api, fields, models
 
 class ResConfigSettings(models.TransientModel):
     _inherit = 'res.config.settings'
@@ -24,6 +24,16 @@ class ResConfigSettings(models.TransientModel):
         readonly=False,
         string='Second Discount on Remainder (%)',
     )
+    pos_khatri_receipt_logo = fields.Binary(
+        related='pos_config_id.khatri_receipt_logo',
+        readonly=False,
+        string='Receipt Footer Logo',
+    )
+    pos_khatri_receipt_contact = fields.Char(
+        related='pos_config_id.khatri_receipt_contact',
+        readonly=False,
+        string='Receipt Footer Contact Number',
+    )
 
 class PosConfig(models.Model):
     _inherit = 'pos.config'
@@ -43,4 +53,13 @@ class PosConfig(models.Model):
     khatri_second_discount = fields.Float(
         string='Second Discount on Remainder (%)',
         default=25.0,
+    )
+    khatri_receipt_logo = fields.Binary(
+        string='Receipt Footer Logo',
+        attachment=False,
+        help='Logo image shown at the bottom of POS receipts (e.g. company branding).',
+    )
+    khatri_receipt_contact = fields.Char(
+        string='Receipt Footer Contact Number',
+        help='Contact number shown at the bottom of POS receipts.',
     )

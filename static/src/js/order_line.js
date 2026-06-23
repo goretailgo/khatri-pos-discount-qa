@@ -1,4 +1,6 @@
 /** @odoo-module **/
+import { onMounted } from "@odoo/owl";
+
 import { patch } from "@web/core/utils/patch";
 import { PosStore } from "@point_of_sale/app/services/pos_store";
 import { OrderReceipt } from "@point_of_sale/app/screens/receipt_screen/receipt/order_receipt";
@@ -171,6 +173,18 @@ patch(Orderline.prototype, khatriHelpers);
 patch(OrderReceipt.prototype, khatriHelpers);
 
 patch(OrderReceipt.prototype, {
+    setup() {
+        super.setup(...arguments);
+        onMounted(() => {
+            try {
+                document.querySelectorAll('.pos-receipt-order-data').forEach(function(el) {
+                    if (el.textContent && el.textContent.indexOf('Powered by') !== -1) {
+                        el.style.display = 'none';
+                    }
+                });
+            } catch (e) {}
+        });
+    },
     khatriNoStep(info) {
         return info ? !info.hasAnyStepped : false;
     },
@@ -310,6 +324,33 @@ patch(OrderReceipt.prototype, {
         } catch (e) { return false; }
     },
 
+    khatriGetConfig() {
+        try {
+            const order = this.props.order;
+            if (order && order.config) return order.config;
+        } catch (e) {}
+        try {
+            if (this.pos && this.pos.config) return this.pos.config;
+        } catch (e) {}
+        try {
+            if (this.env && this.env.services && this.env.services.pos && this.env.services.pos.config) return this.env.services.pos.config;
+        } catch (e) {}
+        return null;
+    },
+    khatriReceiptContact() {
+        try {
+            const cfg = this.khatriGetConfig();
+            return (cfg && cfg.khatri_receipt_contact) || "";
+        } catch (e) { return ""; }
+    },
+    khatriReceiptLogo() {
+        try {
+            const cfg = this.khatriGetConfig();
+            const logo = cfg && cfg.khatri_receipt_logo;
+            if (!logo) return "";
+            return "data:image/png;base64," + logo;
+        } catch (e) { return ""; }
+    },
     khatriLineName(line) {
         try {
             return (line.product_id && line.product_id.display_name) || "";
