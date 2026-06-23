@@ -10,9 +10,9 @@
     ],
     'assets': {
         'point_of_sale._assets_pos': [
-            'khatri_pos_discount_v2/static/src/js/order_line.js',
-            'khatri_pos_discount_v2/static/src/xml/receipt.xml',
-            'khatri_pos_discount_v2/static/src/css/receipt.css',
+            'khatri_pos_discount/static/src/js/order_line.js',
+            'khatri_pos_discount/static/src/xml/receipt.xml',
+            'khatri_pos_discount/static/src/css/receipt.css',
         ],
     },
     'installable': True,
