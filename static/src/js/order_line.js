@@ -54,6 +54,7 @@ function resolveLineDiscount(product, steppedEffective) {
 
 function getSteppedEffective(config) {
     if (!config) return 0;
+    if (!config.khatri_enable_stepped_discount) return 0;
     const d1 = parseFloat(config.khatri_first_discount) || 0;
     const useSecond = config.khatri_enable_second_discount;
     const d2 = useSecond ? (parseFloat(config.khatri_second_discount) || 0) : 0;
@@ -68,7 +69,10 @@ patch(PosStore.prototype, {
         // Merge quantity for existing lines (preserve original behaviour)
         try {
             const config = this.config;
-            if (config && config.khatri_enable_stepped_discount) {
+            // Always merge the same product (matched by product ID) into one line,
+            // regardless of the stepped-discount toggle. Different products that share
+            // a name but have different IDs/barcodes stay as separate lines.
+            if (config) {
                 const order = this.getOrder();
                 if (order && vals.product_id) {
                     const productId = vals.product_id.id || vals.product_id;
@@ -94,7 +98,7 @@ patch(PosStore.prototype, {
         // Now apply the correct discount, reading product JSON from the created line
         try {
             const config = this.config;
-            if (line && config && config.khatri_enable_stepped_discount) {
+            if (line && config) {
                 const steppedEffective = getSteppedEffective(config);
                 const product = line.product_id;
                 const resolved = resolveLineDiscount(product, steppedEffective);
@@ -120,7 +124,6 @@ const khatriHelpers = {
         try {
             if (!line || !line.order_id || !line.order_id.config) return 0;
             const config = line.order_id.config;
-            if (!config.khatri_enable_stepped_discount) return 0;
             const steppedEffective = getSteppedEffective(config);
             const resolved = resolveLineDiscount(line.product_id, steppedEffective);
             if (resolved.type !== "stepped" && resolved.discount > 0) {
@@ -193,7 +196,7 @@ patch(OrderReceipt.prototype, {
             const order = this.props.order;
             if (!order) return null;
             const config = order.config;
-            if (!config || !config.khatri_enable_stepped_discount) return null;
+            if (!config) return null;
 
             const d1 = parseFloat(config.khatri_first_discount) || 0;
             const useSecond = config.khatri_enable_second_discount;
@@ -210,7 +213,8 @@ patch(OrderReceipt.prototype, {
                 const orig = (line.price_unit || 0) * (line.qty || 1);
                 totalOriginal += orig;
                 const resolved = resolveLineDiscount(line.product_id, steppedEffective);
-                const fin = orig * (1 - resolved.discount / 100);
+                const lineDisc = parseFloat(line.discount) || 0;
+                const fin = orig * (1 - lineDisc / 100);
                 totalFinal += fin;
 
                 if (resolved.type === "stepped") {
@@ -221,7 +225,7 @@ patch(OrderReceipt.prototype, {
                     hasAnyCustom = true;
                     customOriginal += orig;
                     customFinal += fin;
-                    if (resolved.discount > 0) customPct = resolved.discount;
+                    if ((parseFloat(line.discount) || 0) > 0) customPct = parseFloat(line.discount) || 0;
                 }
             }
 
@@ -277,21 +281,16 @@ patch(OrderReceipt.prototype, {
     // Final (discounted) price for a single line
     khatriLineFinalNum(line) {
         try {
-            const order = this.props.order;
-            const eff = getSteppedEffective(order.config);
-            const r = resolveLineDiscount(line.product_id, eff);
+            const lineDisc = parseFloat(line.discount) || 0;
             const mrp = (line.price_unit || 0) * (line.qty || 1);
-            return mrp * (1 - r.discount / 100);
+            return mrp * (1 - lineDisc / 100);
         } catch (e) { return 0; }
     },
 
     // Discount % for a single line (for display)
     khatriLinePct(line) {
         try {
-            const order = this.props.order;
-            const eff = getSteppedEffective(order.config);
-            const r = resolveLineDiscount(line.product_id, eff);
-            return r.discount;
+            return parseFloat(line.discount) || 0;
         } catch (e) { return 0; }
     },
 
@@ -304,10 +303,8 @@ patch(OrderReceipt.prototype, {
     // Unit final price (per single unit, after discount)
     khatriLineUnitFinal(line) {
         try {
-            const order = this.props.order;
-            const eff = getSteppedEffective(order.config);
-            const r = resolveLineDiscount(line.product_id, eff);
-            return (line.price_unit || 0) * (1 - r.discount / 100);
+            const lineDisc = parseFloat(line.discount) || 0;
+            return (line.price_unit || 0) * (1 - lineDisc / 100);
         } catch (e) { return 0; }
     },
 
@@ -317,10 +314,7 @@ patch(OrderReceipt.prototype, {
     },
     khatriLineHasDiscount(line) {
         try {
-            const order = this.props.order;
-            const eff = getSteppedEffective(order.config);
-            const r = resolveLineDiscount(line.product_id, eff);
-            return r.discount > 0;
+            return (parseFloat(line.discount) || 0) > 0;
         } catch (e) { return false; }
     },
 
@@ -336,6 +330,20 @@ patch(OrderReceipt.prototype, {
             if (this.env && this.env.services && this.env.services.pos && this.env.services.pos.config) return this.env.services.pos.config;
         } catch (e) {}
         return null;
+    },
+    khatriSectionAHeading() {
+        try {
+            const info = this.getKhatriOrderInfo();
+            if (!info || !(info.steppedSaved > 0)) {
+                return "SECTION A";
+            }
+            if (info.useSecond && info.d2 > 0) {
+                return "SECTION A : " + info.d1 + "% + " + info.d2 + "% Discount";
+            }
+            return "SECTION A : " + info.d1 + "% Discount";
+        } catch (e) {
+            return "SECTION A";
+        }
     },
     khatriReceiptContact() {
         return "+919981161544";

@@ -28,7 +28,7 @@
             <!-- ============ SECTION A: 50% + 25% items ============ -->
             <t t-if="steppedLines.length">
                 <div style="margin-top:6px; font-size:12px; font-weight:700; background:#f3e5f5; padding:3px 5px; border-radius:3px;">
-                    SECTION A : 50% + 25% Discount
+                    <t t-esc="khatriSectionAHeading()"/>
                 </div>
                 <div style="display:flex; justify-content:space-between; font-size:10px; font-weight:700; border-bottom:1px solid #999; padding:2px 0;">
                     <span style="width:16px;">#</span>
@@ -57,19 +57,18 @@
                 <div style="margin-top:3px; padding-top:3px; border-top:1px dashed #bbb;">
                     <div style="display:flex; justify-content:space-between; font-size:11px; color:#555;">
                         <span>MRP Total</span>
-                        <span style="text-decoration:line-through;"><t t-esc="formatCurrency(khatriInfo.steppedOriginal)"/></span>
+                        <t t-if="khatriInfo.steppedSaved > 0">
+                            <span style="text-decoration:line-through;"><t t-esc="formatCurrency(khatriInfo.steppedOriginal)"/></span>
+                        </t>
+                        <t t-if="khatriInfo.steppedSaved == 0">
+                            <span><t t-esc="formatCurrency(khatriInfo.steppedOriginal)"/></span>
+                        </t>
                     </div>
                     <t t-if="khatriInfo.steppedSaved > 0">
                         <div style="display:flex; justify-content:space-between; font-size:11px; color:#c0392b;">
-                            <span>Step 1: <t t-esc="khatriInfo.d1"/>% off</span>
-                            <span>- <t t-esc="formatCurrency(khatriInfo.steppedOriginal * khatriInfo.d1 / 100)"/></span>
+                            <span>Discount</span>
+                            <span>- <t t-esc="formatCurrency(khatriInfo.steppedSaved)"/></span>
                         </div>
-                        <t t-if="khatriInfo.useSecond and khatriInfo.d2 > 0">
-                            <div style="display:flex; justify-content:space-between; font-size:11px; color:#c0392b;">
-                                <span>Step 2: <t t-esc="khatriInfo.d2"/>% off</span>
-                                <span>- <t t-esc="formatCurrency(khatriInfo.steppedOriginal * (1 - khatriInfo.d1/100) * khatriInfo.d2/100)"/></span>
-                            </div>
-                        </t>
                     </t>
                     <div style="display:flex; justify-content:space-between; font-size:12px; font-weight:700; color:#1a1a1a; margin-top:2px;">
                         <span>Section A Total</span>
