@@ -1,0 +1,184 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="paperformat_khatri_receipt_80mm" model="report.paperformat">
+        <field name="name">Khatri POS Receipt 80mm</field>
+        <field name="format">custom</field>
+        <field name="page_width">80</field>
+        <field name="page_height">297</field>
+        <field name="orientation">Portrait</field>
+        <field name="margin_top">3</field>
+        <field name="margin_bottom">3</field>
+        <field name="margin_left">3</field>
+        <field name="margin_right">3</field>
+        <field name="header_line" eval="False"/>
+        <field name="header_spacing">0</field>
+        <field name="dpi">96</field>
+    </record>
+
+    <record id="action_report_khatri_receipt_pdf" model="ir.actions.report">
+        <field name="name">POS Receipt (PDF)</field>
+        <field name="model">pos.order</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">khatri_pos_discount.khatri_receipt_pdf</field>
+        <field name="report_file">khatri_pos_discount.khatri_receipt_pdf</field>
+        <field name="print_report_name">(object.pos_reference or object.name or 'receipt').replace('/', '-')</field>
+        <field name="paperformat_id" ref="paperformat_khatri_receipt_80mm"/>
+        <field name="binding_model_id" ref="point_of_sale.model_pos_order"/>
+        <field name="binding_type">report</field>
+    </record>
+
+    <template id="khatri_receipt_pdf">
+        <t t-call="web.basic_layout">
+            <t t-foreach="docs" t-as="o">
+                <t t-set="d" t-value="o._khatri_receipt_data()"/>
+                <t t-set="fmt" t-value="o._khatri_fmt"/>
+                <div class="kr">
+                    <style>
+                        .kr { font-family: Arial, Helvetica, sans-serif; font-size: 10px; color: #000; width: 100%; }
+                        .kr table { width: 100%; border-collapse: collapse; }
+                        .kr td, .kr th { padding: 2px 0; vertical-align: top; }
+                        .kr .c { text-align: center; }
+                        .kr .r { text-align: right; }
+                        .kr .b { font-weight: bold; }
+                        .kr .grey { color: #888; }
+                        .kr .muted { color: #555; }
+                        .kr .red { color: #c0392b; }
+                        .kr .strike { text-decoration: line-through; }
+                        .kr .secA { background: #f3e5f5; padding: 3px 5px; font-weight: bold; font-size: 11px; margin-top: 8px; }
+                        .kr .secB { background: #fdecea; padding: 3px 5px; font-weight: bold; font-size: 11px; margin-top: 10px; }
+                        .kr .ih th { font-size: 9px; border-bottom: 1px solid #999; }
+                        .kr .sum { border-top: 1px dashed #bbb; margin-top: 3px; }
+                        .kr .big td { font-size: 12px; font-weight: bold; }
+                        .kr .saved { border-top: 2px solid #333; margin-top: 8px; }
+                        .kr .youpay td { font-size: 14px; font-weight: 800; border-top: 2px solid #333; padding-top: 4px; }
+                        .kr .green { color: #27ae60; font-weight: bold; font-size: 12px; }
+                        .kr .dash { border-top: 1px dashed #000; margin: 8px 0; }
+                    </style>
+
+                    <!-- Header -->
+                    <div class="c">
+                        <img t-if="o.company_id.logo" t-att-src="image_data_uri(o.company_id.logo)" style="max-width:55mm; max-height:25mm;"/>
+                        <div t-else="" class="b" style="font-size:13px;" t-esc="o.company_id.name"/>
+                        <div t-esc="context_timestamp(o.date_order).strftime('%d/%m/%Y, %I:%M %p')"/>
+                        <div t-if="o.pos_reference" class="b">Receipt: <t t-esc="o.pos_reference"/></div>
+                        <div t-if="o.company_id.vat" class="b">GSTIN: <t t-esc="o.company_id.vat"/></div>
+                        <div t-if="o.user_id">Served by: <t t-esc="o.user_id.name"/></div>
+                        <div t-if="o.partner_id">Customer: <t t-esc="o.partner_id.name"/></div>
+                    </div>
+
+                    <!-- SECTION A -->
+                    <t t-if="d['stepped']">
+                        <div class="secA" t-esc="d['heading_a']"/>
+                        <table>
+                            <tr class="ih">
+                                <th style="text-align:left; width:6%">#</th>
+                                <th style="text-align:left">Item</th>
+                                <th class="c" style="width:8%">Qty</th>
+                                <th class="r" style="width:20%">Unit</th>
+                                <th class="r" style="width:20%">MRP</th>
+                                <th class="r" style="width:20%">Price</th>
+                            </tr>
+                            <tr t-foreach="d['stepped']" t-as="l">
+                                <td t-esc="l_index + 1"/>
+                                <td t-esc="l['name']"/>
+                                <td class="c" t-esc="'%g' % l['qty']"/>
+                                <td class="r grey" t-esc="fmt(l['unit'])"/>
+                                <td t-att-class="'r grey strike' if l['disc'] &gt; 0 else 'r grey'" t-esc="fmt(l['mrp'])"/>
+                                <td class="r b" t-esc="fmt(l['final'])"/>
+                            </tr>
+                        </table>
+                        <table class="sum">
+                            <tr class="muted">
+                                <td>MRP Total</td>
+                                <td t-att-class="'r strike' if d['s_saved'] &gt; 0 else 'r'" t-esc="fmt(d['s_orig'])"/>
+                            </tr>
+                            <tr t-if="d['s_saved'] &gt; 0" class="red">
+                                <td>Discount</td><td class="r">- <t t-esc="fmt(d['s_saved'])"/></td>
+                            </tr>
+                            <tr class="b"><td>Section A Total</td><td class="r" t-esc="fmt(d['s_fin'])"/></tr>
+                        </table>
+                    </t>
+
+                    <!-- SECTION B -->
+                    <t t-if="d['custom']">
+                        <div class="secB">
+                            <t t-if="d['c_saved'] &gt; 0">SECTION B : Special Discount</t>
+                            <t t-else="">SECTION B</t>
+                        </div>
+                        <table>
+                            <tr class="ih">
+                                <th style="text-align:left; width:6%">#</th>
+                                <th style="text-align:left">Item</th>
+                                <th class="c" style="width:8%">Qty</th>
+                                <th class="r" style="width:20%">Unit</th>
+                                <th class="r" style="width:20%">MRP</th>
+                                <th class="r" style="width:20%">Price</th>
+                            </tr>
+                            <tr t-foreach="d['custom']" t-as="l">
+                                <td t-esc="l_index + 1"/>
+                                <td><t t-esc="l['name']"/>
+                                    <span t-if="l['disc']" class="red b"> (<t t-esc="'%g' % l['disc']"/>% off)</span></td>
+                                <td class="c" t-esc="'%g' % l['qty']"/>
+                                <td class="r grey" t-esc="fmt(l['unit'])"/>
+                                <td t-att-class="'r grey strike' if l['disc'] &gt; 0 else 'r grey'" t-esc="fmt(l['mrp'])"/>
+                                <td class="r b" t-esc="fmt(l['final'])"/>
+                            </tr>
+                        </table>
+                        <table class="sum">
+                            <t t-if="d['c_saved'] &gt; 0">
+                                <tr class="muted"><td>MRP Total</td><td class="r strike" t-esc="fmt(d['c_orig'])"/></tr>
+                                <tr class="red">
+                                    <td>Discount <t t-if="d['c_pct']">(<t t-esc="'%g' % d['c_pct']"/>%)</t></td>
+                                    <td class="r">- <t t-esc="fmt(d['c_saved'])"/></td>
+                                </tr>
+                            </t>
+                            <tr class="b"><td>Section B Total</td><td class="r" t-esc="fmt(d['c_fin'])"/></tr>
+                        </table>
+                    </t>
+
+                    <!-- Order totals + payments (as standard POS receipt) -->
+                    <table style="margin-top:6px;">
+                        <tr class="big"><td>Total</td><td class="r" t-esc="fmt(o.amount_total)"/></tr>
+                        <tr t-if="o.amount_tax"><td class="muted">Incl. GST</td><td class="r muted" t-esc="fmt(o.amount_tax)"/></tr>
+                        <tr t-foreach="o.payment_ids.filtered(lambda p: not p.is_change)" t-as="p">
+                            <td t-esc="p.payment_method_id.name"/><td class="r" t-esc="fmt(p.amount)"/>
+                        </tr>
+                        <tr t-if="o.amount_return"><td>Change</td><td class="r" t-esc="fmt(o.amount_return)"/></tr>
+                        <tr t-if="d['discounts'] &gt; 0"><td>Discounts</td><td class="r" t-esc="fmt(d['discounts'])"/></tr>
+                    </table>
+
+                    <!-- Total Saved / YOU PAY -->
+                    <t t-if="d['total_saved'] &gt; 0">
+                        <table class="saved">
+                            <tr class="muted"><td>Total MRP</td><td class="r strike" t-esc="fmt(d['total_orig'])"/></tr>
+                            <tr class="green"><td>Total Saved</td><td class="r" t-esc="fmt(d['total_saved'])"/></tr>
+                            <tr class="youpay"><td>YOU PAY</td><td class="r" t-esc="fmt(d['total_fin'])"/></tr>
+                        </table>
+                    </t>
+
+                    <!-- Optional UPI QR -->
+                    <t t-set="qr" t-value="o._khatri_upi_qr()"/>
+                    <t t-if="qr">
+                        <div class="dash"/>
+                        <div class="c b">Pay via UPI</div>
+                        <div class="c muted" style="font-size:8px;">GPay · PhonePe · Paytm · Any UPI App</div>
+                        <div class="c"><img t-att-src="qr" style="width:35mm; height:35mm;"/></div>
+                    </t>
+
+                    <div t-if="o.config_id.receipt_footer" class="c" style="margin-top:6px;" t-esc="o.config_id.receipt_footer"/>
+
+                    <!-- goretailgo branding footer -->
+                    <t t-set="grg_logo" t-value="o._khatri_grg_logo()"/>
+                    <div class="c" style="margin-top:12px; padding-top:10px; border-top:1px solid #e0e0e0;">
+                        <img t-if="grg_logo" t-att-src="grg_logo" style="width:26mm; height:auto;"/>
+                        <div style="font-size:9px; color:#555; margin-top:6px;">
+                            <span style="font-weight:bold; color:#10314f;">Contact</span>
+                            <span style="color:#999;"> | </span>
+                            <span t-esc="o._khatri_grg_contact()"/>
+                        </div>
+                    </div>
+                </div>
+            </t>
+        </t>
+    </template>
+</odoo>
