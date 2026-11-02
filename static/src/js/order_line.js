@@ -72,10 +72,15 @@ patch(PosStore.prototype, {
             // Always merge the same product (matched by product ID) into one line,
             // regardless of the stepped-discount toggle. Different products that share
             // a name but have different IDs/barcodes stay as separate lines.
-            if (config) {
+            if (config && opts.merge !== false && !("price_unit" in vals)) {
                 const order = this.getOrder();
-                if (order && vals.product_id) {
-                    const productId = vals.product_id.id || vals.product_id;
+                let productId = vals.product_id ? (vals.product_id.id || vals.product_id) : null;
+                // Odoo 19 product-card click passes only product_tmpl_id; resolve single-variant product
+                if (!productId && vals.product_tmpl_id && typeof vals.product_tmpl_id === "object") {
+                    const variants = vals.product_tmpl_id.product_variant_ids || [];
+                    if (variants.length === 1) productId = variants[0].id || variants[0];
+                }
+                if (order && productId) {
                     const existingLine = order.lines.find(line =>
                         ((line.product_id && line.product_id.id) || line.product_id) === productId &&
                         !line.refunded_orderline_id
@@ -106,6 +111,27 @@ patch(PosStore.prototype, {
             }
         } catch (e) {
             console.error("Khatri discount error:", e);
+        }
+
+        // Safety merge (e.g. multi-variant products after configurator): same product -> one line
+        try {
+            const order = this.getOrder();
+            if (line && order && opts.merge !== false && !("price_unit" in vals) && !line.refunded_orderline_id) {
+                const pid = (line.product_id && line.product_id.id) || line.product_id;
+                const existingLine = order.lines.find(l =>
+                    l !== line &&
+                    ((l.product_id && l.product_id.id) || l.product_id) === pid &&
+                    !l.refunded_orderline_id
+                );
+                if (existingLine) {
+                    existingLine.setQuantity(existingLine.getQuantity() + line.getQuantity());
+                    line.delete();
+                    this.selectOrderLine(order, existingLine);
+                    return existingLine;
+                }
+            }
+        } catch (e) {
+            console.error("Khatri post-merge error:", e);
         }
 
         return line;
@@ -208,8 +234,10 @@ patch(OrderReceipt.prototype, {
             let customOriginal = 0, customFinal = 0;
             let hasAnyStepped = false, hasAnyCustom = false;
             let customPct = 0;
+            let totalQty = 0;
 
             for (const line of order.lines || []) {
+                totalQty += parseFloat(line.qty) || 0;
                 const orig = (line.price_unit || 0) * (line.qty || 1);
                 totalOriginal += orig;
                 const resolved = resolveLineDiscount(line.product_id, steppedEffective);
@@ -240,6 +268,7 @@ patch(OrderReceipt.prototype, {
                 hasAnyStepped, hasAnyCustom,
                 customDiscountPct: customPct,
                 isMixed: hasAnyStepped && hasAnyCustom,
+                totalQty: Math.round(totalQty * 1000) / 1000,
             };
         } catch (e) {
             console.error("Khatri discount error:", e);

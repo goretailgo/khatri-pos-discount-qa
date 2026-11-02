@@ -142,6 +142,10 @@
                         <span>Total MRP</span>
                         <span style="text-decoration:line-through;"><t t-esc="formatCurrency(khatriInfo2.totalOriginal)"/></span>
                     </div>
+                    <div style="display:flex; justify-content:space-between; font-size:13px; color:#555; margin-top:3px;">
+                        <span>Total Quantity</span>
+                        <span><t t-esc="khatriInfo2.totalQty"/></span>
+                    </div>
                     <div style="display:flex; justify-content:space-between; font-size:14px; color:#27ae60; font-weight:700; margin-top:3px;">
                         <span>Total Saved</span>
                         <span><t t-esc="formatCurrency(khatriInfo2.totalSaved)"/></span>
@@ -171,6 +175,17 @@
         <xpath expr="//div[hasclass('d-flex')][hasclass('gap-2')][div[hasclass('text-break')]]" position="replace"/>
     </t>
 
+
+    <t t-name="point_of_sale.OrderDisplay"
+       t-inherit="point_of_sale.OrderDisplay"
+       t-inherit-mode="extension">
+        <xpath expr="//div[hasclass('order-summary')]/div[span[hasclass('total')]]" position="after">
+            <div class="khatri-total-qty d-flex justify-content-between w-100 fs-5 text-muted">
+                <span>Total Quantity</span>
+                <span t-esc="Math.round(order.totalQuantity * 1000) / 1000"/>
+            </div>
+        </xpath>
+    </t>
 
     <t t-name="point_of_sale.Orderline"
        t-inherit="point_of_sale.Orderline"
