@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_company_form_khatri_receipt_logo" model="ir.ui.view">
+        <field name="name">res.company.form.khatri.receipt.logo</field>
+        <field name="model">res.company</field>
+        <field name="inherit_id" ref="base.view_company_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='logo']" position="after">
+                <div class="d-flex flex-column align-items-center">
+                    <field name="khatri_receipt_logo" widget="image" class="oe_avatar float-none" nolabel="1"
+                           options="{'size': [100,100], 'img_class': 'rounded-4'}"/>
+                    <small class="text-muted">Receipt Logo</small>
+                </div>
+            </xpath>
+        </field>
+    </record>
+</odoo>

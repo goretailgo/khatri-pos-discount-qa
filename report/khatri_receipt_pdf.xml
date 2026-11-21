@@ -57,8 +57,10 @@
 
                     <!-- Header -->
                     <div class="c">
-                        <img t-if="o.company_id.logo" t-att-src="image_data_uri(o.company_id.logo)" style="max-width:55mm; max-height:25mm;"/>
+                        <t t-set="receipt_logo" t-value="o.company_id._khatri_receipt_logo_image()"/>
+                        <img t-if="receipt_logo" t-att-src="image_data_uri(receipt_logo)" style="max-width:55mm; max-height:25mm;"/>
                         <div t-else="" class="b" style="font-size:13px;" t-esc="o.company_id.name"/>
+                        <div t-if="o.config_id.name" class="b">Shop: <t t-esc="o.config_id.name"/></div>
                         <div t-esc="context_timestamp(o.date_order).strftime('%d/%m/%Y, %I:%M %p')"/>
                         <div t-if="o.pos_reference" class="b">Receipt: <t t-esc="o.pos_reference"/></div>
                         <div t-if="o.company_id.vat" class="b">GSTIN: <t t-esc="o.company_id.vat"/></div>
